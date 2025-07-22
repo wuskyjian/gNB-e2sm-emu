@@ -4,6 +4,7 @@
 
 #include "gnb_message_handlers.h"
 #include <stdbool.h>
+#include <sys/time.h>
 #define CONNECTED_UES 4
 
 int gnb_id = 0;
@@ -274,18 +275,27 @@ UeListM* build_ue_list_message(){
         // read mesures and add to message (actually just send random data)
 
         // measures
-        ue_info_list[i]->has_meas_type_1 = 1;
-        ue_info_list[i]->meas_type_1 = rand();
-        ue_info_list[i]->has_meas_type_2 = 1;
-        ue_info_list[i]->meas_type_2 = rand();
-        ue_info_list[i]->has_meas_type_3 = 1;
-        ue_info_list[i]->meas_type_3 = rand();
+        ue_info_list[i]->has_rsrp = 1; // Set has_flag to true
+        ue_info_list[i]->rsrp = -140 + (rand() % 100); // RSRP between -140 and -40 dBm
+        
+        ue_info_list[i]->has_ber_ul = 1; // Set has_flag to true
+        ue_info_list[i]->ber_ul = (float)(rand() % 1000) / 10000.0; // BER UL between 0 and 0.1
+        
+        ue_info_list[i]->has_ber_dl = 1; // Set has_flag to true
+        ue_info_list[i]->ber_dl = (float)(rand() % 1000) / 10000.0; // BER DL between 0 and 0.1
+        
+        ue_info_list[i]->has_mcs_ul = 1; // Set has_flag to true
+        ue_info_list[i]->mcs_ul = rand() % 29; // MCS UL between 0 and 28
+        
+        ue_info_list[i]->has_mcs_dl = 1; // Set has_flag to true
+        ue_info_list[i]->mcs_dl = rand() % 29; // MCS DL between 0 and 28
 
         // properties
-        ue_info_list[i]->has_prop_1 = 1;
+        ue_info_list[i]->has_prop_1 = 1; // Set has_flag to true
         ue_info_list[i]->prop_1 = connected_ue_list[i].prop_1;
+        
         if(connected_ue_list[i].prop_2 > -1){
-            ue_info_list[i]->has_prop_2 = 1;
+            ue_info_list[i]->has_prop_2 = 1; // Set has_flag to true
             ue_info_list[i]->prop_2 = connected_ue_list[i].prop_2;
         }
 
@@ -324,6 +334,18 @@ void ran_read(RANParameter ran_par_enum, RANParamMapEntry* map_entry){
         case RAN_PARAMETER__UE_LIST:
             map_entry->value_case=RAN_PARAM_MAP_ENTRY__VALUE_UE_LIST;
             map_entry->ue_list = build_ue_list_message();
+            break;
+        case RAN_PARAMETER__CELL_LOAD:
+            map_entry->value_case=RAN_PARAM_MAP_ENTRY__VALUE_CELL_LOAD;
+            // Generate random cell load between 0 and 100%
+            map_entry->cell_load = (float)(rand() % 101);
+            break;
+        case RAN_PARAMETER__TIMESTAMP:
+            map_entry->value_case=RAN_PARAM_MAP_ENTRY__VALUE_TIMESTAMP;
+            // Current time in milliseconds since epoch
+            struct timeval tv;
+            gettimeofday(&tv, NULL);
+            map_entry->timestamp = (int64_t)(tv.tv_sec) * 1000 + (tv.tv_usec / 1000);
             break;
         default:
             printf("Unrecognized param %d\n",ran_par_enum);
